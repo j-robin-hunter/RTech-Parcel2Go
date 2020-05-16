@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!--
+/**
+* Copyright 2020 © Roma Technology Ltd. All rights reserved.
+* See COPYING.txt for license details.
+**/
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+  <default>
+    <carriers>
+      <parcel2go>
+        <active>0</active>
+        <title>Parcel2Go</title>
+        <name>Parcel2Go</name>
+        <model>RTech\Parcel2Go\Model\Carrier\Parcel2Go</model>
+        <minweight>1</minweight>
+        <minbox>25x18x8</minbox>
+        <is_online>1</is_online>
+        <boxattribute>boxsize</boxattribute>
+      </parcel2go>
+    </carriers>
+  </default>
+</config>
