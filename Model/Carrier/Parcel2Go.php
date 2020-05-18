@@ -102,7 +102,7 @@ class Parcel2Go extends AbstractCarrier implements CarrierInterface {
         $method = $this->rateMethodFactory->create();
 
         $method->setCarrier($this->_code);
-        $method->setCarrierTitle('');
+        $method->setCarrierTitle($this->getConfigData('title'));
 
         $method->setMethod($key);
         $method->setMethodTitle(__(self::SERVICE[$key]) . ' - ' . $slot['Service']['Name']);
