@@ -105,7 +105,6 @@ class Parcel2Go extends AbstractCarrier implements CarrierInterface {
         $method->setCarrierTitle('');
 
         $method->setMethod($key);
-        $n = self::SERVICE[$key];
         $method->setMethodTitle(__(self::SERVICE[$key]) . ' - ' . $slot['Service']['Name']);
 
         $cost = $slot['TotalPriceExVat'];
@@ -147,7 +146,6 @@ class Parcel2Go extends AbstractCarrier implements CarrierInterface {
 
   private function getParcels($request) {
     $parcel = [];
-    $minBox = $this->getConfigData('minbox');
     $restrictedGroups = str_getcsv($this->getConfigData('restricted'));
 
     // Need to check each item for restricted product and parcel each
@@ -161,7 +159,7 @@ class Parcel2Go extends AbstractCarrier implements CarrierInterface {
         'Value' => $item->getPrice(),
         'Weight' => $item->getWeight()
         ],
-      $this->getBoxSize($this->getBoxSizeAttributeValue($product, $this->getConfigData('boxattribute'), $request->getStoreId(), $minBox)));
+      $this->getBoxSize($this->getBoxSizeAttributeValue($product, $this->getConfigData('boxattribute'), $request->getStoreId())));
       for ($i = 0; $i < $item->getQty(); $i++) {
         $parcel[] = $itemParcel;
       }
@@ -175,7 +173,7 @@ class Parcel2Go extends AbstractCarrier implements CarrierInterface {
         'Value' => $request->getPackageValue(),
         'Weight' => $minWeight
         ],
-        $this->getBoxSize($minBox));
+        $this->getBoxSize($this->getConfigData('minbox')));
     }
 
     return $parcel;
@@ -184,7 +182,11 @@ class Parcel2Go extends AbstractCarrier implements CarrierInterface {
   private function getBoxSize($dimensions) {
     preg_match_all('/\d+/', $dimensions, $matches);
     if (count($matches[0]) != 3) {
-      throw new ValidatorException(__('Parcel2Go invalid dimensions string %1'), $dimensions);
+      $this->logger->warning(__('Parcel2Go invalid dimensions string %1', $dimensions));
+      preg_match_all('/\d+/', $this->getConfigData('minbox'), $matches);
+      if (count($matches[0]) != 3) {
+        throw new ValidatorException(__('Parcel2Go invalid minbox dimensions configuration'));
+      }
     }
     rsort($matches[0]);
     return [
@@ -194,9 +196,9 @@ class Parcel2Go extends AbstractCarrier implements CarrierInterface {
     ];
   }
 
-  private function getBoxSizeAttributeValue($product, $attribute, $storeId, $minBox) {
+  private function getBoxSizeAttributeValue($product, $attribute, $storeId) {
     try {
-      $value = $minBox;
+      $value = '';
       if ($product->getResource()->getAttribute($attribute)) {
         $found = $product->getResource()->getAttribute($attribute)->setStoreId($storeId)->getFrontend()->getValue($product);
         if ($found != false) {
@@ -205,7 +207,7 @@ class Parcel2Go extends AbstractCarrier implements CarrierInterface {
       }
       return $value;
     } catch (\Exception $e) {
-      return $minbox;
+      return $value;
     }
   }
 }
