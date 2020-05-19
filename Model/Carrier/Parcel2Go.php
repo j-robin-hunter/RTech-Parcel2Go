@@ -151,17 +151,19 @@ class Parcel2Go extends AbstractCarrier implements CarrierInterface {
     // Need to check each item for restricted product and parcel each
     foreach ($request->getAllItems() as $item) {
       $product = $this->productRepository->getById($item->getProduct()->getId());
-      // Check for restricted product and return no parcels if found
-      if (count(array_intersect($restrictedGroups, $product->getCategoryCollection()->getAllIds()))) {
-        return [];
-      }
-      $itemParcel = array_merge([
-        'Value' => $item->getPrice(),
-        'Weight' => $item->getWeight()
-        ],
-      $this->getBoxSize($this->getBoxSizeAttributeValue($product, $this->getConfigData('boxattribute'), $request->getStoreId())));
-      for ($i = 0; $i < $item->getQty(); $i++) {
-        $parcel[] = $itemParcel;
+        if ($product->getTypeId() == 'simple') {
+        // Check for restricted product and return no parcels if found
+        if (count(array_intersect($restrictedGroups, $product->getCategoryCollection()->getAllIds()))) {
+          return [];
+        }
+        $itemParcel = array_merge([
+          'Value' => $item->getPrice(),
+          'Weight' => $item->getWeight() ?? 0
+          ],
+        $this->getBoxSize($this->getBoxSizeAttributeValue($product, $this->getConfigData('boxattribute'), $request->getStoreId())));
+        for ($i = 0; $i < $item->getQty(); $i++) {
+          $parcel[] = $itemParcel;
+        }
       }
     }
 
@@ -169,11 +171,11 @@ class Parcel2Go extends AbstractCarrier implements CarrierInterface {
     // ship as a single parcel in the minimum sized box
     $minWeight = $this->getConfigData('minweight');
     if ($request->getPackageWeight() <= $minWeight) {
-      $parcel[] = array_merge([
+      $parcel = array(array_merge([
         'Value' => $request->getPackageValue(),
         'Weight' => $minWeight
         ],
-        $this->getBoxSize($this->getConfigData('minbox')));
+        $this->getBoxSize($this->getConfigData('minbox'))));
     }
 
     return $parcel;
