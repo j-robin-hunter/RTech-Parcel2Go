@@ -10,6 +10,7 @@ use Magento\Shipping\Model\Carrier\AbstractCarrier;
 use Magento\Shipping\Model\Carrier\CarrierInterface;
 use Magento\Sales\Model\Order\Shipment;
 use Magento\Framework\Exception\ValidatorException;
+use Magento\Shipping\Model\Tracking\Result\StatusFactory;
 
 class Parcel2Go extends AbstractCarrier implements CarrierInterface {
 
@@ -20,6 +21,7 @@ class Parcel2Go extends AbstractCarrier implements CarrierInterface {
   ];
   protected $_code = 'parcel2go';
   protected $_isFixed = true;
+  protected $trackStatusFactory;
 
   private $rateResultFactory;
   private $rateMethodFactory;
@@ -37,6 +39,7 @@ class Parcel2Go extends AbstractCarrier implements CarrierInterface {
     \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory,
     \RTech\Parcel2Go\Api\Data\Parcel2GoClientInterface $parcel2GoClient,
     \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
+    StatusFactory $trackStatusFactory,
     array $data = []
   ) {
     parent::__construct($scopeConfig, $rateErrorFactory, $logger, $data);
@@ -47,6 +50,7 @@ class Parcel2Go extends AbstractCarrier implements CarrierInterface {
     $this->logger = $logger;
     $this->parcel2GoClient = $parcel2GoClient;
     $this->productRepository = $productRepository;
+    $this->trackStatusFactory = $trackStatusFactory;
   }
 
   public function collectRates(RateRequest $request) {
@@ -123,13 +127,31 @@ class Parcel2Go extends AbstractCarrier implements CarrierInterface {
       return false;
     }
   }
-
+  
   public function getAllowedMethods() {
     return [
       'fast' => 'Fast',
       'medium' => 'Medium',
       'slow' => 'Slow'
     ];
+  }
+
+  public function isTrackingAvailable() {
+    return true;
+  }
+
+  public function getTrackingInfo($trackingNumber) {
+    $tracking = $this->trackStatusFactory->create();
+
+    $url = $this->getConfigData('url') . '/tracking/' . $trackingNumber;
+
+    $tracking->setData([
+      'carrier' => $this->_code,
+      'carrier_title' => $this->getConfigData('title'),
+      'tracking' => $trackingNumber,
+      'url' => $url,
+    ]);
+    return $tracking;
   }
 
   protected function getDefaultValue($origValue, $pathToValue) {
